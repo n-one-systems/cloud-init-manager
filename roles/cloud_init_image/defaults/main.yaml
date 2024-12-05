@@ -1,0 +1,8 @@
+# ./roles/cloud_init_image/defaults/main.yml
+# nsys-ai-claude-3.5
+
+# Network configuration
+configure_network: true
+
+# Image format settings - future extensibility
+image_format: iso  # Currently only ISO is supported

@@ -1,0 +1,54 @@
+#cloud-config
+# nsys-ai-claude-3.5
+
+# System locale and timezone
+locale: {{ locale }}
+timezone: {{ timezone }}
+
+# Keyboard configuration
+keyboard:
+  layout: {{ keyboard_layout }}
+
+# Package management configuration
+package_upgrade: {{ package_upgrade | bool }}
+{% if reboot_if_required | bool %}
+power_state:
+  mode: reboot
+  timeout: 300
+  condition: True
+{% endif %}
+
+# User configuration
+users:
+  - name: {{ default_user }}
+    gecos: Cloud User
+    shell: {{ user_shell }}
+    groups: [adm, systemd-journal]
+    sudo: {{ "ALL=(ALL) NOPASSWD:ALL" if user_sudo_nopasswd | bool else "ALL=(ALL) ALL" if user_sudo | bool else "false" }}
+    lock_passwd: {{ "true" if not default_password else "false" }}
+{% if default_password %}
+    passwd: {{ default_password | password_hash('sha512') }}
+{% endif %}
+    ssh_authorized_keys:
+      - {{ ssh_key_data.public_key }}
+
+# Write files
+write_files:
+  # Custom message of the day
+  - path: /etc/motd
+    content: |
+      Cloud-init managed system
+      Generated for: {{ cloud_init_config.vm_name }}
+      Managed by: nsys.cloud_init_manager
+    owner: root:root
+    permissions: '0644'
+
+# Post-configuration commands
+runcmd:
+  # Update SSHD configuration for security
+  - sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication {{ "yes" if default_password else "no" }}/' /etc/ssh/sshd_config
+  - sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+  - systemctl restart sshd
+
+# Final message
+final_message: "Cloud-init completed startup after $UPTIME seconds"

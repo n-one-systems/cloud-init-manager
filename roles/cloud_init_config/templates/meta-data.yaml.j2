@@ -1,0 +1,10 @@
+# nsys-ai-claude-3.5
+instance-id: {{ cloud_init_config.vm_name }}
+local-hostname: {{ cloud_init_config.vm_name }}
+
+# Optional cloud-specific metadata
+{% if cloud_metadata is defined %}
+{% for key, value in cloud_metadata.items() %}
+{{ key }}: {{ value }}
+{% endfor %}
+{% endif %}

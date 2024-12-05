@@ -1,0 +1,47 @@
+# ./roles/cloud_init_config/tasks/main.yml
+# nsys-ai-claude-3.5
+
+- name: Assert that required variables are set
+  ansible.builtin.assert:
+    that:
+      - project_base_dir is defined
+      - ssh_key_data is defined
+    quiet: true
+
+- name: Set default variables if not provided
+  ansible.builtin.set_fact:
+    cloud_init_output_dir: "{{ project_base_dir }}/cloud-init"
+
+- name: Create cloud-init output directory
+  ansible.builtin.file:
+    path: "{{ cloud_init_output_dir }}/{{ vm_name }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate user-data configuration
+  ansible.builtin.template:
+    src: "{{ user_data_template }}"
+    dest: "{{ cloud_init_output_dir }}/{{ vm_name }}/user-data"
+    mode: '0644'
+
+- name: Generate network configuration
+  ansible.builtin.template:
+    src: "{{ network_data_template }}"
+    dest: "{{ cloud_init_output_dir }}/{{ vm_name }}/network-config"
+    mode: '0644'
+  when: network_interfaces is defined
+
+- name: Generate meta-data configuration
+  ansible.builtin.template:
+    src: "{{ meta_data_template }}"
+    dest: "{{ cloud_init_output_dir }}/{{ vm_name }}/meta-data"
+    mode: '0644'
+
+- name: Export cloud-init configuration paths
+  ansible.builtin.set_fact:
+    cloud_init_config:
+      vm_name: "{{ vm_name }}"
+      user_data: "{{ cloud_init_output_dir }}/{{ vm_name }}/user-data"
+      network_config: "{{ cloud_init_output_dir }}/{{ vm_name }}/network-config"
+      meta_data: "{{ cloud_init_output_dir }}/{{ vm_name }}/meta-data"
+      output_dir: "{{ cloud_init_output_dir }}/{{ vm_name }}"

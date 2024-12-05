@@ -1,0 +1,37 @@
+# ./roles/ssh_key_manager/tasks/main.yml
+# nsys-ai-claude-3.5
+
+- name: Assert that required variables are set
+  ansible.builtin.assert:
+    that:
+      - project_base_dir is defined
+    quiet: true
+
+- name: Set default variables if not provided
+  ansible.builtin.set_fact:
+    ssh_key_path: "{{ project_base_dir }}/ssh"
+    ssh_key_type: "{{ ssh_key_type | default('ed25519') }}"
+    ssh_key_bits: "{{ ssh_key_bits | default(4096) }}"
+
+- name: Create SSH key directory
+  ansible.builtin.file:
+    path: "{{ ssh_key_path }}"
+    state: directory
+    mode: '0700'
+
+- name: Generate SSH key pair
+  community.crypto.openssh_keypair:
+    path: "{{ ssh_key_path }}/id_{{ ssh_key_type }}"
+    type: "{{ ssh_key_type }}"
+    size: "{{ ssh_key_bits }}"
+    state: present
+  register: ssh_key
+
+- name: Export SSH key data
+  ansible.builtin.set_fact:
+    ssh_key_data:
+      path: "{{ ssh_key_path }}/id_{{ ssh_key_type }}"
+      public_key: "{{ lookup('file', ssh_key_path + '/id_' + ssh_key_type + '.pub') }}"
+      private_key: "{{ lookup('file', ssh_key_path + '/id_' + ssh_key_type) }}"
+      type: "{{ ssh_key_type }}"
+      bits: "{{ ssh_key_bits }}"

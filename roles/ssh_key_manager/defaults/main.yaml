@@ -1,0 +1,6 @@
+# ./roles/ssh_key_manager/defaults/main.yml
+# nsys-ai-claude-3.5
+
+# SSH key generation defaults
+ssh_key_type: "ed25519"
+ssh_key_bits: 4096

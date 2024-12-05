@@ -1,0 +1,46 @@
+# ./roles/cloud_init_image/tasks/main.yml
+# nsys-ai-claude-3.5
+
+- name: Assert that required variables are set
+  ansible.builtin.assert:
+    that:
+      - cloud_init_config is defined
+      - cloud_init_config.output_dir is defined
+      - cloud_init_config.vm_name is defined
+      - output_path is defined
+    quiet: true
+
+- name: Check if cloud-localds is installed
+  ansible.builtin.command: command -v cloud-localds
+  register: cloud_localds_check
+  changed_when: false
+  failed_when: false
+
+- name: Check if genisoimage is installed
+  ansible.builtin.command: command -v genisoimage
+  register: genisoimage_check
+  changed_when: false
+  failed_when: false
+
+- name: Fail if required tools are not installed
+  ansible.builtin.fail:
+    msg: "Required tools (cloud-localds and genisoimage) must be installed"
+  when: cloud_localds_check.rc != 0 or genisoimage_check.rc != 0
+
+- name: Generate cloud-init ISO
+  ansible.builtin.command:
+    cmd: >-
+      cloud-localds
+      {% if configure_network | default(true) | bool %}--network-config network-config{% endif %}
+      {{ output_path }}/{{cloud_init_config.vm_name}}-cloud-init.iso
+      user-data
+      meta-data
+    chdir: "{{ cloud_init_config.output_dir }}"
+    creates: "{{ output_path }}/{{cloud_init_config.vm_name}}-cloud-init.iso"
+
+- name: Export cloud-init image info
+  ansible.builtin.set_fact:
+    cloud_init_image:
+      vm_name: "{{ cloud_init_config.vm_name }}"
+      path: "{{ output_path }}/{{cloud_init_config.vm_name}}-cloud-init.iso"
+      network_configured: "{{ configure_network | default(true) }}"

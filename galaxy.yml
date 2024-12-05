@@ -1,0 +1,19 @@
+namespace: nsys
+name: clout-init-manager
+version: 0.0.1
+readme: README.md
+authors:
+  - N-One Systems (@n-one-systems)
+description: Collection for templating cloud-init configs
+dependencies: []
+license:
+  - GPL-3.0-or-later
+tags:
+  - libvirt
+  - virtualization
+  - system
+repository: https://github.com/n-one-systems/cloud-init-manager
+documentation: https://github.com/n-one-systems/cloud-init-manager/tree/main/docs
+homepage: https://github.com/n-one-systems/cloud-init-manager
+issues: https://github.com/n-one-systems/cloud-init-manager/issues
+build_ignore: []

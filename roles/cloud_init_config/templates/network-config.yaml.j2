@@ -1,0 +1,25 @@
+# nsys-ai-claude-3.5
+version: 2
+ethernets:
+{% for interface in network_interfaces %}
+  {{ interface.name | default('eth' + loop.index0|string) }}:
+    dhcp4: {{ interface.dhcp4 | default(true) | bool | string | lower }}
+    dhcp6: {{ interface.dhcp6 | default(false) | bool | string | lower }}
+{% if interface.ip is defined %}
+    addresses:
+      - {{ interface.ip }}
+{% endif %}
+{% if interface.gateway4 is defined %}
+    gateway4: {{ interface.gateway4 }}
+{% endif %}
+{% if interface.nameservers is defined %}
+    nameservers:
+      addresses: {{ interface.nameservers }}
+{% endif %}
+{% if interface.mtu is defined %}
+    mtu: {{ interface.mtu }}
+{% endif %}
+{% if interface.optional | default(false) %}
+    optional: true
+{% endif %}
+{% endfor %}
