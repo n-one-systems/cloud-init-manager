@@ -1,0 +1,34 @@
+# ./playbooks/simple.yaml
+# nsys-ai-claude-3.5
+
+---
+- name: Simple cloud-init configuration example
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    project_base_dir: /tmp/cloud-init
+    output_path: "{{ project_base_dir }}/images"
+    vm_name: test-vm
+
+  tasks:
+    - name: Create output directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ project_base_dir }}"
+        - "{{ output_path }}"
+
+    - name: Generate SSH keys
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.ssh_key_manager
+
+    - name: Generate cloud-init configurations
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.cloud_init_config
+
+    - name: Create cloud-init image
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.cloud_init_image

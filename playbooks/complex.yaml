@@ -1,0 +1,82 @@
+# ./playbooks/complex.yaml
+# nsys-ai-claude-3.5
+
+---
+- name: Create cloud-init configurations
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    project_base_dir: /tmp/cloud-init-test
+    output_path: "{{ project_base_dir }}/images"
+
+    # VM configurations
+    vms:
+      # Simple VM with defaults
+      - name: simple-vm
+        
+      # Complex VM with custom settings
+      - name: custom-vm
+        user: admin
+        locale: de_DE.UTF-8
+        timezone: Europe/Berlin
+        keyboard_layout: de
+        sudo_nopasswd: false
+        network_interfaces:
+          - name: eth0
+            dhcp4: false
+            ip: 192.168.122.10/24
+            gateway4: 192.168.122.1
+            nameservers:
+              - 8.8.8.8
+              - 8.8.4.4
+          - name: eth1
+            dhcp4: true
+            optional: true
+
+  tasks:
+    - name: Create output directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ project_base_dir }}"
+        - "{{ output_path }}"
+
+    - name: Generate SSH keys
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.ssh_key_manager
+      vars:
+        project_base_dir: "{{ project_base_dir }}"
+
+    # Process each VM
+    - name: Create cloud-init configurations for VMs
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.cloud_init_config
+      vars:
+        vm_name: "{{ item.name }}"
+        default_user: "{{ item.user | default('cloud-user') }}"
+        locale: "{{ item.locale | default('en_US.UTF-8') }}"
+        timezone: "{{ item.timezone | default('UTC') }}"
+        keyboard_layout: "{{ item.keyboard_layout | default('us') }}"
+        user_sudo_nopasswd: "{{ item.sudo_nopasswd | default(true) }}"
+        network_interfaces: "{{ item.network_interfaces | default([{'dhcp4': true}]) }}"
+      loop: "{{ vms }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create cloud-init images
+      ansible.builtin.include_role:
+        name: nsys.cloud_init_manager.cloud_init_image
+      vars:
+        vm_name: "{{ item.name }}"
+        configure_network: "{{ item.network_interfaces is defined }}"
+      loop: "{{ vms }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Show created images
+      ansible.builtin.debug:
+        msg: "Created cloud-init image for {{ item }}: {{ output_path }}/{{ item }}-cloud-init.iso"
+      loop: "{{ vms | map(attribute='name') | list }}"
